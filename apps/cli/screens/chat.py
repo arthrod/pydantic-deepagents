@@ -489,17 +489,17 @@ class ChatScreen(Screen):
             # Only fall back to a rough heuristic when no authoritative cost is
             # available. CostTracking (genai-prices) feeds precise per-model
             # values via on_cost_updated/app.total_cost; never overwrite those.
-            if self.app.total_cost <= 0:  # type: ignore
+            if self.app.total_cost <= 0:
                 # Estimate cost (~$3/MTok input, ~$15/MTok output for Sonnet-class)
                 estimated_cost = (total_input * 3.0 + total_output * 15.0) / 1_000_000
                 status.total_cost = estimated_cost
                 status.current_cost = estimated_cost
 
             # Context: use last known values from callbacks, or estimate from tokens
-            if self.app.context_max > 0:  # type: ignore
-                status.context_pct = self.app.context_pct  # type: ignore
-                status.context_current = self.app.context_current  # type: ignore
-                status.context_max = self.app.context_max  # type: ignore
+            if self.app.context_max > 0:
+                status.context_pct = self.app.context_pct
+                status.context_current = self.app.context_current
+                status.context_max = self.app.context_max
             elif total_input > 0:
                 # Rough estimate: latest input tokens vs 200K default
                 max_tokens = 200_000
@@ -529,7 +529,7 @@ class ChatScreen(Screen):
                 parts=[TextPart(content=text)],
                 timestamp=datetime.now(timezone.utc),
             )
-            self.app.message_history.append(synthetic)  # type: ignore
+            self.app.message_history.append(synthetic)
             self._save_session()
         except Exception:
             pass
@@ -791,7 +791,7 @@ class ChatScreen(Screen):
 
         app = self.app
         if getattr(app, "agent", None) is None:
-            app.notify("No agent configured - use /provider to set up", severity="error")  # type: ignore
+            app.notify("No agent configured - use /provider to set up", severity="error")
             return
 
         header = self.query_one(DeepHeader)
@@ -799,7 +799,7 @@ class ChatScreen(Screen):
 
         header.is_streaming = True
         self.query_one(InputArea).is_agent_running = True
-        app.last_response = ""  # type: ignore
+        app.last_response = ""
         assistant = msg_list.begin_assistant_message()
 
         task = asyncio.create_task(self._agent_stream_worker(text, assistant, msg_list, header))
@@ -809,7 +809,7 @@ class ChatScreen(Screen):
             app.agent_task = None
             exc = t.exception()
             if exc:
-                app.notify(f"Agent error: {exc}", severity="error", timeout=10)  # type: ignore
+                app.notify(f"Agent error: {exc}", severity="error", timeout=10)
 
         task.add_done_callback(_on_done)
 
@@ -821,9 +821,9 @@ class ChatScreen(Screen):
         log = get_logger()
 
         app = self.app
-        agent = app.agent  # type: ignore
-        deps = app.deps  # type: ignore
-        history = app.message_history  # type: ignore
+        agent = app.agent
+        deps = app.deps
+        history = app.message_history
 
         log.info("Agent run started", prompt_length=len(text), history_messages=len(history))
 
@@ -882,7 +882,7 @@ class ChatScreen(Screen):
                                         delta = event.delta.content_delta
                                         if delta:
                                             assistant.append_text(delta)
-                                            app.last_response += delta  # type: ignore
+                                            app.last_response += delta
                                             msg_list.scroll_end(animate=False)
                                     elif isinstance(event.delta, ThinkingPartDelta):
                                         if not header.is_thinking:
@@ -903,7 +903,7 @@ class ChatScreen(Screen):
                                     if len(cumulative) > prev_len:
                                         delta = cumulative[prev_len:]
                                         assistant.append_text(delta)
-                                        app.last_response += delta  # type: ignore
+                                        app.last_response += delta
                                         prev_len = len(cumulative)
                                         msg_list.scroll_end(animate=False)
 
@@ -1051,7 +1051,7 @@ class ChatScreen(Screen):
                 except Exception:
                     pass
 
-                app.message_history = result.all_messages()  # type: ignore
+                app.message_history = result.all_messages()
 
                 from pydantic_ai.tools import DeferredToolRequests
 
@@ -1129,7 +1129,7 @@ class ChatScreen(Screen):
                                                 delta = event.delta.content_delta
                                                 if delta:
                                                     assistant_cont.append_text(delta)
-                                                    app.last_response += delta  # type: ignore
+                                                    app.last_response += delta
                                                     msg_list.scroll_end(animate=False)
                                         elif isinstance(event, FinalResultEvent):
                                             final_found = True
@@ -1140,7 +1140,7 @@ class ChatScreen(Screen):
                                             if len(cumulative) > prev_len:
                                                 delta = cumulative[prev_len:]
                                                 assistant_cont.append_text(delta)
-                                                app.last_response += delta  # type: ignore
+                                                app.last_response += delta
                                                 prev_len = len(cumulative)
                                                 msg_list.scroll_end(animate=False)
                             elif Agent.is_call_tools_node(node):
@@ -1191,10 +1191,10 @@ class ChatScreen(Screen):
                     msg_list.end_assistant_message()
 
                     if cont_result is not None:
-                        app.message_history = cont_result.all_messages()  # type: ignore
+                        app.message_history = cont_result.all_messages()
                         try:
                             status = self.query_one(StatusBar)
-                            status.message_count = len(app.message_history)  # type: ignore
+                            status.message_count = len(app.message_history)
                         except Exception:
                             pass
                     log.info(
@@ -1237,7 +1237,7 @@ class ChatScreen(Screen):
             assistant.append_text(f"\n\n**Error:** {exc}")
             assistant.finalize_text()
             with contextlib.suppress(Exception):
-                app.notify(f"Agent error: {exc}", severity="error", timeout=10)  # type: ignore
+                app.notify(f"Agent error: {exc}", severity="error", timeout=10)
         finally:
             from apps.cli.widgets.input_area import HintsBar
 
@@ -1427,7 +1427,7 @@ class ChatScreen(Screen):
     def on_agent_run_started(self, _event: AgentRunStarted) -> None:
         header = self.query_one(DeepHeader)
         header.is_streaming = True
-        self.app.last_response = ""  # type: ignore
+        self.app.last_response = ""
         msg_list = self.query_one(MessageList)
         msg_list.begin_assistant_message()
 
@@ -1438,7 +1438,7 @@ class ChatScreen(Screen):
             # Auto-scroll (debounced - Textual coalesces scroll_end calls)
             msg_list.scroll_end(animate=False)
         # Track for /copy
-        self.app.last_response = getattr(self.app, "last_response", "") + event.text  # type: ignore
+        self.app.last_response = getattr(self.app, "last_response", "") + event.text
 
     def on_agent_text_complete(self, _event: AgentTextComplete) -> None:
         msg_list = self.query_one(MessageList)
